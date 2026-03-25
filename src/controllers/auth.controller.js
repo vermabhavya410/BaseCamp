@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import { ApiError } from "../utils/api-error.js";
-import { registerUserService, verifyUserService, loginUserService, logoutUserService, forgotPasswordRequestService, forgotPasswordSevice, changeCurrentPasswordService, ResendEmailService,refreshAccessTokenService } from "../services/auth.service.js";
+import { registerUserService, verifyUserService, loginUserService, logoutUserService, forgotPasswordRequestService, forgotPasswordService, changeCurrentPasswordService, ResendEmailService, refreshAccessTokenService } from "../services/auth.service.js";
 import { ApiResponse } from "../utils/api-response.js";
 
 //register user handler, which is functionality that should perform on a particular route
@@ -31,9 +31,10 @@ const verifyUserhandler = async (req, res) => {
   try {
     const { rawToken } = req.params;
     await verifyUserService(rawToken)
-    return res.status(400).json(new ApiResponse(StatusCodes.ACCEPTED, {}, "USer verification is Successful!🥳"))
+    return res.status(StatusCodes.OK).json(new ApiResponse(StatusCodes.ACCEPTED, {}, "USer verification is Successful!🥳"))
   } catch (error) {
-    console.log(error, "Error in verify user handler!");
+    console.log("Error:", error.message);
+    console.log("Full error:", error);
     throw new ApiError(StatusCodes.BAD_REQUEST, "error in verify user Handler!"), {
       error
     }
@@ -131,7 +132,7 @@ const forgotPasswordHandler = async (req, res) => {
   try {
     const { rawToken } = req.params
     const { newPassword } = req.body
-    await forgotPasswordSevice(rawToken, newPassword)
+    await forgotPasswordService(rawToken, newPassword)
     return res
       .status(StatusCodes.OK)
       .json(

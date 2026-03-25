@@ -50,11 +50,10 @@ const saveUser = async (user) => {
 const assignRefreshToken = async (userId, refreshToken) => {
   const user = await User.findByIdAndUpdate(userId, {
     $set: { refreshToken: refreshToken }
-  })
-  await user.save()
+  },{new:true});
+  // await user.save()
   return user
-
-}
+};
 
 // 6 March 2026
 
@@ -74,8 +73,8 @@ const verifyUser = async (userId) => {
       isEmailVerified: true
     },
     $unset: {
-      emailVerificationToken: null,
-      emailVerificationTokenExpiry: null
+      emailVerificationToken: 1,
+      emailVerificationTokenExpiry: 1
     }
   })
   return verifieduser
@@ -83,15 +82,17 @@ const verifyUser = async (userId) => {
 
 //Function used to logout the user from DB and remove its refresh Token
 const logout = async (userId) => {
-  const user = await User.findByIdAndUpdate(userId, {
-    $unset: {
-      refreshToken
-    }
-  }, {
-    new: true
-  })
-  return user
-}
+  const user = await User.findByIdAndUpdate(
+    userId,
+    {
+      $unset: {
+        refreshToken: 1
+      }
+    },
+    { new: true }
+  );
+  return user;
+};
 
 //11-03-26
 
@@ -110,8 +111,8 @@ const resetPassword = async (id, newPassword) => {
   const user = await User.findByIdAndUpdate(id, {
     $set: { password: newPassword },
     $unset: {
-      forgotPasswordToken: null,
-      forgotPasswordTokenExpiry: null
+      forgotPasswordToken:1,
+      forgotPasswordTokenExpiry:1
     }
   })
   return user;

@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { createUser, findUserByEmail, findUserByEmailOrUserName, findUserwithValidverficationToken, saveUser, verifyUser, findUserById, logout, findUsersWithValidResetToken, changeCurrentPassword, assignRefreshToken } from "../repositories/auth.repository.js";
+import { createUser, findUserByEmail, findUserByEmailOrUserName, findUserwithValidverficationToken, saveUser, verifyUser, findUserById, logout, findUsersWithValidResetToken, changeCurrentPassword, assignRefreshToken,resetPassword } from "../repositories/auth.repository.js";
 import { ApiError } from "../utils/api-error.js";
 import { forgotPasswordEmailContent, userVerificationEmailContent } from "../utils/mail.template.js";
 import { sendEmail } from "./mailer.js";
@@ -18,8 +18,6 @@ const generateAccessTokenandrefreshToken = async (userId) => {
     refreshToken
   }
 }
-
-
 
 //register user service:Normal function with some register functionality
 //destructuring various fields we got from controller
@@ -45,7 +43,9 @@ const registerUserService = async ({ fullName, userName, email, password }) => {
   await saveUser(user)
 
   //verification link that user will get in its email
-  const verificationLink = `http://localhost:${process.env.PORT}/api/v1/auth/verify-email/${rawToken}`
+
+  //changed it to Frontend Link because after clicking the link in email user should be directed to frontend page where we will call verify email api with raw token to verify user email
+  const verificationLink = `http://localhost:5173/verify-email/${rawToken}`;
 
   //generating html for email
   const { html } = userVerificationEmailContent({
@@ -63,22 +63,27 @@ const registerUserService = async ({ fullName, userName, email, password }) => {
 }
 
 const verifyUserService = async (rawToken) => {
+  console.log("raw token in service is ", rawToken)
   if (!rawToken) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Token not Found!")
   }
   const usersWithToken = await findUserwithValidverficationToken()
+  console.log("users with token are ", usersWithToken.length)
   if (!usersWithToken.length) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "No user Found!")
   }
 
   const comparision = await Promise.all(
     usersWithToken.map(async (user) => {
+    
       const isMatched = await bcrypt.compare(rawToken, user.emailVerificationToken)
       return isMatched ? user : null
     })
   )
   const matchedUser = comparision.find((result) => result !== null)
-
+  if (!matchedUser) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid or expired token!");
+      }
   if (matchedUser.isEmailVerified) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Email is already verified!")
   }
@@ -136,7 +141,8 @@ const forgotPasswordRequestService = async (email) => {
   }
   const rawToken = await user.generateForgotPasswordToken()
   await saveUser(user)
-  const verificationLink = `http://localhost:${process.env.PORT}/api/v1/auth/forgot-password/request/${rawToken}`
+
+  const verificationLink = `http://localhost:5173/forgot-password/${rawToken}`
 
   const { html } = forgotPasswordEmailContent({
     name: user.fullName,
@@ -153,7 +159,7 @@ const forgotPasswordRequestService = async (email) => {
   }
 }
 
-const forgotPasswordSevice = async (rawToken, newPassword) => {
+const forgotPasswordService = async (rawToken, newPassword) => {
   if (!rawToken) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Token Not Found!")
   }
@@ -210,6 +216,7 @@ const ResendEmailService = async (email) => {
   }
   const rawToken = await user.generateEmailVerificationToken()
   await saveUser(user)
+
   const verificationLink = `http://localhost:${process.env.PORT}/api/v1/auth/verify-email/${rawToken}`
 
   const { html } = userVerificationEmailContent({
@@ -241,9 +248,9 @@ const refreshAccessTokenService = async (incomingToken) => {
   if (incomingToken !== user.refreshToken) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "invalid token")
   }
-  const {accessToken,refreshToken}=await generateAccessTokenandrefreshToken(user._id)
-  await assignRefreshToken(user._id,refreshToken)
-  return{
+  const { accessToken, refreshToken } = await generateAccessTokenandrefreshToken(user._id)
+  await assignRefreshToken(user._id, refreshToken)
+  return {
     accessToken,
     refreshToken
   }
@@ -254,7 +261,7 @@ export {
   loginUserService,
   logoutUserService,
   forgotPasswordRequestService,
-  forgotPasswordSevice,
+  forgotPasswordService,
   changeCurrentPasswordService,
   ResendEmailService,
   refreshAccessTokenService
