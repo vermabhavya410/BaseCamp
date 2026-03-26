@@ -118,17 +118,16 @@ const resetPassword = async (id, newPassword) => {
   return user;
 }
 
-const changeCurrentPassword  = async (id, newPassword) => {
-  const user = await User.findByIdAndUpdate(id, {
-    $set: { password: newPassword }
-  },
-    {
-      new: true
-    }
-  )
-  return user
-
-}
+const changeCurrentPassword = async (id, newPassword) => {
+  const user = await User.findById(id);
+  if (!user) {
+    throw new Error("User not found");
+  }
+  user.password = newPassword;
+  user.refreshToken = undefined;
+  await user.save(); 
+  return user;
+};
 
 export {
   createUser,

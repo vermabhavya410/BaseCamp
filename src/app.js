@@ -19,4 +19,4 @@ app.get("/api/v1/auth/test",(req,res)=>{
   res.json({message:"Backend is working"});
 })
 
-app.use("/api/v1/auth",AuthenticationRoute);
+app.use("/api/v1/auth",AuthenticationRoute); 

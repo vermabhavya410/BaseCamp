@@ -156,6 +156,8 @@ const forgotPasswordHandler = async (req, res) => {
 const changeCurrentPasswordHandler = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body
+    console.log("Old Password:", oldPassword);
+    console.log("New Password:", newPassword);
     await changeCurrentPasswordService(req.user, oldPassword, newPassword)
     return res.status(StatusCodes.OK).json(
       new ApiResponse(

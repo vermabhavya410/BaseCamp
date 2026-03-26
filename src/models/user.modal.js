@@ -39,7 +39,7 @@ const userSchema = new Schema({
     required: [true, 'password is required'],
     trim: true,
     minlength: 4,
-    maxlength: 30,
+  
   },
   isEmailVerified: {
     type: Boolean,
